@@ -1,13 +1,13 @@
 #include <string>
 #include <iostream>
-#include <cmath> 
+#include <cmath>
 
 // For terminal delay
 #include <chrono>
 #include <thread>
 
 #include <fstream>
-#include <algorithm> 
+#include <algorithm>
 
 #include "game.h"
 #include "music.h"
@@ -56,6 +56,7 @@ void Game::createInformationBoard()
 
 void Game::renderInformationBoard() const
 {
+    wbkgd(mWindows[0] , COLOR_PAIR(5));//render information board color
     wattron(this->mWindows[0] , COLOR_PAIR(7));
     mvwprintw(this->mWindows[0], 1, 1, "Welcome to The Snake Game!");
     mvwprintw(this->mWindows[0], 2, 1, "This is by Leo.");
@@ -104,7 +105,7 @@ void Game::renderInstructionBoard() const
 
 void Game::renderLeaderBoard() const
 {
-    // If there is not too much space, skip rendering the leader board 
+    // If there is not too much space, skip rendering the leader board
     if (this->mScreenHeight - this->mInformationHeight - 14 - 2 < 3 * 2)
     {
         return;
@@ -264,7 +265,7 @@ bool Game::renderRestartMenu() const
     {
         return false;
     }
-    
+
 }
 
 void Game::renderPoints() const
@@ -420,7 +421,7 @@ void Game::runGame(int& escfor)
     bool moveSuccess;
     int key;
 
-    //开背景音乐
+    //open bgm
 
     open_bgm();
 
@@ -429,16 +430,16 @@ void Game::runGame(int& escfor)
     {
         this->controlSnake(escfor);
 
-        //游戏中途重开或结束
+        //restart or quit when gaming
         if(escfor == 0 || escfor ==1)break;
-        //游戏存档
-        //else if(escFor == 3)savefile;
+        //save when gaming
+        else if(escfor == 3){escfor = -1 ; writeGameFile();}
 
 
         werase(this->mWindows[1]);
         box(this->mWindows[1], 0, 0);
-        wbkgd(this->mWindows[1] , COLOR_PAIR(3));//渲染背景颜色
-        
+        wbkgd(this->mWindows[1] , COLOR_PAIR(3));//render game board background color
+
         bool eatFood = this->mPtrSnake->moveFoward();
         bool collision = this->mPtrSnake->checkCollision();
         if (collision == true)
@@ -448,7 +449,7 @@ void Game::runGame(int& escfor)
         this->renderSnake();
         if (eatFood == true)
         {
-            eat_sound();//吃食物的声音
+            eat_sound();//sound when eating
             this->mPoints += 1;
             this->createRamdonFood();
             this->mPtrSnake->senseFood(this->mFood);
@@ -463,24 +464,24 @@ void Game::runGame(int& escfor)
         refresh();
     }
 
-    stop_bgm();//停止bgm
-    restart_sound();//发出重开菜单的声音
+    stop_bgm();//stop bgm
+    restart_sound();//sound when menu
 }
 
 void Game::startGame()
 {
-    //载入并初始化颜色
+    //initialise the color pair
     initscr();
     start_color();
     //init_color(COLOR_BLUE , 19 , 70 , 149);
     init_pair(1 , COLOR_RED , COLOR_RED);//food
     init_pair(2 , COLOR_GREEN , COLOR_BLACK);//snake
-    init_pair(3 , COLOR_WHITE , COLOR_BLUE); //1背景
+    init_pair(3 , COLOR_WHITE , COLOR_BLUE); //board 1 background
     init_pair(4 , COLOR_WHITE , COLOR_YELLOW); //points
-    init_pair(5 , COLOR_WHITE , COLOR_YELLOW);//0背景
+    init_pair(5 , COLOR_WHITE , COLOR_YELLOW);//board 0 background
     init_pair(6 , COLOR_RED , COLOR_YELLOW);//difficulty
     init_pair(7 , COLOR_BLUE , COLOR_YELLOW);//information
-    init_pair(8 , COLOR_WHITE , COLOR_RED);//2背景
+    init_pair(8 , COLOR_WHITE , COLOR_RED);//board 2 background
 
 
     refresh();
@@ -489,16 +490,22 @@ void Game::startGame()
     {
         int escForwhat = -1;
 
-        wbkgd(mWindows[0] , COLOR_PAIR(5));//information 背景填充颜色
 
         this->readLeaderBoard();
         this->renderBoards();
-        this->initializeGame();
+
+        //judge how to initialize game
+        if(this->GameFile_is_empty())this->initializeGame();
+        else{
+            if(this->whether_to_read_file())this->readGameFile();
+            else this->initializeGame();
+        }
+
         this->runGame(escForwhat);
 
-        //中途退出
+        //quit when gaming
         if(escForwhat == 1)break;
-        //中途重新开始游戏
+        //restart when gaming
         else if(escForwhat == 0){
                 this->mPtrSnake = nullptr;
                 continue;}
@@ -567,13 +574,162 @@ bool Game::writeLeaderBoard()
     return true;
 }
 
-//完成游戏进度的写入
+//write game process
 bool Game::writeGameFile()
-{}
+{
 
-//完成游戏进度的读入
+    //clear and open the file
+    std::ofstream outputFile(this->mSavedFilePath , outputFile.trunc);
+
+
+    //write
+    if(outputFile.is_open()){
+        outputFile << this->mDelay << std::endl;//write speed
+        outputFile << this->mDifficulty << std::endl;//write difficulty
+        outputFile << this->mPoints << std::endl; //write points
+        outputFile << this->mFood.getX() << ' ' << this->mFood.getY() << std::endl; //write food position
+        outputFile << this->mPtrSnake->get_direction() << std::endl;//write direction
+
+        //write snake position one by one
+        for(int i = 0 ; i < this->mPtrSnake->getLength() ; i ++)
+        {
+            outputFile << this->mPtrSnake->getSnake()[i].getX() << ' ' << this->mPtrSnake->getSnake()[i].getY()  << std::endl;
+
+        }
+
+    }
+    else return false;
+
+    outputFile.close();
+    return true;
+
+}
+
+//read game process
 bool Game::readGameFile()
-{}
+{
+    std::ifstream inputFile(this->mSavedFilePath);
+
+
+    //read
+    int temp;
+    if(inputFile.is_open()){
+        inputFile >> temp;
+        this->mDelay = temp;//read speed
+        inputFile >> temp;
+        this->mDifficulty = temp;//read difficulty
+        inputFile >> temp;
+        this->mPoints = temp; //read points
+
+        int food_x , food_y;
+        inputFile >> food_x >> food_y ; //read food position
+        SnakeBody food(food_x , food_y);
+        this->mFood = food;//initialise the food
+
+        inputFile >> temp;
+
+        //read snake position one by one
+        this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength , inputFile));
+        //sense food
+        this->mPtrSnake->senseFood(mFood);
+        //set direction
+        this->mPtrSnake->set_direction(temp);
+
+        }
+
+
+    else return false;
+
+    inputFile.close();
+    return true;
+}
+
+bool Game::GameFile_is_empty()
+{
+    std::ifstream inputFile(this->mSavedFilePath);
+
+    bool result = false;
+    if(inputFile.get() == EOF)result = true;
+
+
+    inputFile.close();
+
+    return result;
+
+}
+
+bool Game::whether_to_read_file()
+{
+    WINDOW * menu;
+    int width = this->mGameBoardWidth * 0.5;
+    int height = this->mGameBoardHeight * 0.5;
+    int startX = this->mGameBoardWidth * 0.25;
+    int startY = this->mGameBoardHeight * 0.25 + this->mInformationHeight;
+
+    menu = newwin(height, width, startY, startX);
+    box(menu, 0, 0);
+    std::vector<std::string> menuItems = {"Load", "New Game"};
+
+    int index = 0;
+    int offset = 4;
+    mvwprintw(menu, 1, 1, "whether to load or not");
+
+    wattron(menu, A_STANDOUT);
+    mvwprintw(menu, 0 + offset, 1, menuItems[0].c_str());
+    wattroff(menu, A_STANDOUT);
+    mvwprintw(menu, 1 + offset, 1, menuItems[1].c_str());
+
+    wrefresh(menu);
+
+    int key;
+    while (true)
+    {
+        key = getch();
+        switch(key)
+        {
+            case 'W':
+            case 'w':
+            case KEY_UP:
+            {
+                mvwprintw(menu, index + offset, 1, menuItems[index].c_str());
+                index --;
+                index = (index < 0) ? menuItems.size() - 1 : index;
+                wattron(menu, A_STANDOUT);
+                mvwprintw(menu, index + offset, 1, menuItems[index].c_str());
+                wattroff(menu, A_STANDOUT);
+                break;
+            }
+            case 'S':
+            case 's':
+            case KEY_DOWN:
+            {
+                mvwprintw(menu, index + offset, 1, menuItems[index].c_str());
+                index ++;
+                index = (index > menuItems.size() - 1) ? 0 : index;
+                wattron(menu, A_STANDOUT);
+                mvwprintw(menu, index + offset, 1, menuItems[index].c_str());
+                wattroff(menu, A_STANDOUT);
+                break;
+            }
+        }
+        wrefresh(menu);
+        if (key == ' ' || key == 10)
+        {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    delwin(menu);
+
+    if (index == 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 
 

@@ -35,6 +35,55 @@ Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength): m
     this->initializeSnake();
     this->setRandomSeed();
 }
+//input initialize snake
+Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength , std::ifstream& input): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength)
+{
+
+    int snake_x , snake_y;
+        while(input >> snake_x && input >> snake_y){
+            SnakeBody sn(snake_x , snake_y);
+            this->getSnake().push_back(sn);
+        }
+    this->setRandomSeed();
+}
+
+int Snake::get_direction()
+{
+    switch(mDirection)
+    {
+    case Direction::Up:
+        return 0;
+        break;
+    case Direction::Down:
+        return 1;
+        break;
+    case Direction::Left:
+        return 2;
+        break;
+    default:
+        return 3;
+        break;
+    }
+}
+
+void Snake::set_direction(int& new_direc)
+{
+    switch(new_direc)
+    {
+    case 0:
+        mDirection = Direction::Up;
+        break;
+    case 1:
+        mDirection = Direction::Down;
+        break;
+    case 2:
+        mDirection = Direction::Left;
+        break;
+    default:
+        mDirection = Direction::Right;
+        break;
+    }
+}
 
 void Snake::setRandomSeed()
 {
@@ -237,14 +286,14 @@ bool Snake::moveFoward()
     if (this->touchFood())
     {
         SnakeBody newHead = this->mFood;
-        this->mSnake.insert(this->mSnake.begin(), newHead); 
+        this->mSnake.insert(this->mSnake.begin(), newHead);
         return true;
     }
     else
     {
         this->mSnake.pop_back();
         SnakeBody newHead = this->createNewHead();
-        this->mSnake.insert(this->mSnake.begin(), newHead); 
+        this->mSnake.insert(this->mSnake.begin(), newHead);
         return false;
     }
 }

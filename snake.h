@@ -2,6 +2,7 @@
 #define SNAKE_H
 
 #include <vector>
+#include <fstream>
 
 enum class Direction
 {
@@ -30,6 +31,7 @@ class Snake
 public:
     //Snake();
     Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength);
+    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength ,std::ifstream& input);
     // Set random seed
     void setRandomSeed();
     // Initialize snake
@@ -49,6 +51,9 @@ public:
     int getLength();
     SnakeBody createNewHead();
     bool moveFoward();
+    //read and write
+    int get_direction();
+    void set_direction(int& new_direc);
 
 private:
     const int mGameBoardWidth;

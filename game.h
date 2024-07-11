@@ -52,6 +52,8 @@ public:
 
     bool writeGameFile();
     bool readGameFile();
+    bool GameFile_is_empty();
+    bool whether_to_read_file();
 
 
 private:
