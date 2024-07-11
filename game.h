@@ -1,12 +1,14 @@
 #ifndef GAME_H
 #define GAME_H
 
+//#include <ncurses.h>
 #include "curses.h"
 #include <string>
 #include <vector>
 #include <memory>
 
 #include "snake.h"
+#include "music.h"
 
 
 class Game
@@ -14,39 +16,43 @@ class Game
 public:
     Game();
     ~Game();
-    
+
 		void createInformationBoard();
     void renderInformationBoard() const;
 
     void createGameBoard();
     void renderGameBoard() const;
-    
+
 		void createInstructionBoard();
     void renderInstructionBoard() const;
-		
+
 		void loadLeadBoard();
     void updateLeadBoard();
     bool readLeaderBoard();
     bool updateLeaderBoard();
     bool writeLeaderBoard();
     void renderLeaderBoard() const;
-    
+
 		void renderBoards() const;
-    
+
 		void initializeGame();
-    void runGame();
+    void runGame(int & escFor);
     void renderPoints() const;
     void renderDifficulty() const;
-    
+
 		void createRamdonFood();
     void renderFood() const;
     void renderSnake() const;
-    void controlSnake() const;
-    
+    void controlSnake(int& escfor) const;
+
 		void startGame();
     bool renderRestartMenu() const;
+    int renderEscMenu() const;
     void adjustDelay();
-    
+
+    bool writeGameFile();
+    bool readGameFile();
+
 
 private:
     // We need to have two windows
@@ -66,11 +72,15 @@ private:
     // Food information
     SnakeBody mFood;
     const char mFoodSymbol = '#';
+    //游戏参数
     int mPoints = 0;
     int mDifficulty = 0;
     int mBaseDelay = 100;
     int mDelay;
+    //文件
     const std::string mRecordBoardFilePath = "record.dat";
+    const std::string mSavedFilePath = "gamefile.txt";
+    //其他
     std::vector<int> mLeaderBoard;
     const int mNumLeaders = 3;
 };
