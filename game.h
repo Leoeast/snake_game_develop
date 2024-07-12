@@ -37,8 +37,10 @@ public:
 
 		void initializeGame();
     void runGame(int & escFor);
-    void renderPoints() const;
-    void renderDifficulty() const;
+    void lifeRestart();
+
+    void renderGameParameter() const;
+
 
 		void createRamdonFood();
     void renderFood() const;
@@ -49,6 +51,8 @@ public:
     bool renderRestartMenu() const;
     int renderEscMenu() const;
     void adjustDelay();
+    void adjustLife();
+    bool is_dead();
 
     bool writeGameFile();
     bool readGameFile();
@@ -79,6 +83,8 @@ private:
     int mDifficulty = 0;
     int mBaseDelay = 100;
     int mDelay;
+    int mLife = 1;
+    int mRedFoodNum = 0;
     //文件
     const std::string mRecordBoardFilePath = "record.dat";
     const std::string mSavedFilePath = "gamefile.txt";

@@ -4,7 +4,7 @@ main.o: main.cpp game.h
 	g++ -c main.cpp
 music.o:music.cpp -lwinmm
 	g++ -c music.cpp
-game.o: game.cpp snake.h music.h
+game.o: game.cpp snake.h music.h color.h
 	g++ -c game.cpp 
 snake.o: snake.cpp
 	g++ -c snake.cpp

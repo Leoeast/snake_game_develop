@@ -11,6 +11,7 @@
 
 #include "game.h"
 #include "music.h"
+#include "color.h"
 
 Game::Game()
 {
@@ -56,14 +57,14 @@ void Game::createInformationBoard()
 
 void Game::renderInformationBoard() const
 {
-    wbkgd(mWindows[0] , COLOR_PAIR(5));//render information board color
-    wattron(this->mWindows[0] , COLOR_PAIR(7));
+    wbkgd(mWindows[0] , COLOR_PAIR(board_0_color));//render information board color
+    wattron(this->mWindows[0] , COLOR_PAIR(information_color));
     mvwprintw(this->mWindows[0], 1, 1, "Welcome to The Snake Game!");
     mvwprintw(this->mWindows[0], 2, 1, "This is by Leo.");
     mvwprintw(this->mWindows[0], 3, 1, "Github : Leoeast!");
     mvwprintw(this->mWindows[0], 4, 1, "Implemented using C++ and libncurses library.");
     wrefresh(this->mWindows[0]);
-    wattroff(this->mWindows[0] , COLOR_PAIR(7));
+    wattroff(this->mWindows[0] , COLOR_PAIR(information_color));
 }
 
 void Game::createGameBoard()
@@ -87,17 +88,20 @@ void Game::createInstructionBoard()
 
 void Game::renderInstructionBoard() const
 {
-    wbkgd(mWindows[2] , COLOR_PAIR(8));
+    wbkgd(mWindows[2] , COLOR_PAIR(board_2_color));
     mvwprintw(this->mWindows[2], 1, 1, "Manual");
 
-    mvwprintw(this->mWindows[2], 3, 1, "Up: W");
-    mvwprintw(this->mWindows[2], 4, 1, "Down: S");
-    mvwprintw(this->mWindows[2], 5, 1, "Left: A");
-    mvwprintw(this->mWindows[2], 6, 1, "Right: D");
-    mvwprintw(this->mWindows[2], 7, 1, "Escape: ESC");
+    //mvwprintw(this->mWindows[2], 3, 1, "Up: W");
+    //mvwprintw(this->mWindows[2], 4, 1, "Down: S");
+    //mvwprintw(this->mWindows[2], 5, 1, "Left: A");
+    //mvwprintw(this->mWindows[2], 6, 1, "Right: D");
+    mvwprintw(this->mWindows[2], 3, 1, "Escape: ESC");
 
-    mvwprintw(this->mWindows[2], 8, 1, "Difficulty");
-    mvwprintw(this->mWindows[2], 11, 1, "Points");
+    mvwprintw(this->mWindows[2], 5, 1, "Life");
+
+    mvwprintw(this->mWindows[2], 7, 1, "Difficulty");
+    mvwprintw(this->mWindows[2], 9, 1, "Points");
+    mvwprintw(this->mWindows[2], 11, 1, "Red Food");
 
     wrefresh(this->mWindows[2]);
 }
@@ -106,19 +110,19 @@ void Game::renderInstructionBoard() const
 void Game::renderLeaderBoard() const
 {
     // If there is not too much space, skip rendering the leader board
-    if (this->mScreenHeight - this->mInformationHeight - 14 - 2 < 3 * 2)
+    if (this->mScreenHeight - this->mInformationHeight - 16 - 2 < 3 * 2)
     {
         return;
     }
-    mvwprintw(this->mWindows[2], 14, 1, "Leader Board");
+    mvwprintw(this->mWindows[2], 16, 1, "Leader Board");
     std::string pointString;
     std::string rank;
-    for (int i = 0; i < std::min(this->mNumLeaders, this->mScreenHeight - this->mInformationHeight - 14 - 2); i ++)
+    for (int i = 0; i < std::min(this->mNumLeaders, this->mScreenHeight - this->mInformationHeight - 16 - 2); i ++)
     {
         pointString = std::to_string(this->mLeaderBoard[i]);
         rank = "#" + std::to_string(i + 1) + ":";
-        mvwprintw(this->mWindows[2], 14 + (i + 1), 1, rank.c_str());
-        mvwprintw(this->mWindows[2], 14 + (i + 1), 5, pointString.c_str());
+        mvwprintw(this->mWindows[2], 16 + (i + 1), 1, rank.c_str());
+        mvwprintw(this->mWindows[2], 16 + (i + 1), 5, pointString.c_str());
     }
     wrefresh(this->mWindows[2]);
 }
@@ -268,23 +272,33 @@ bool Game::renderRestartMenu() const
 
 }
 
-void Game::renderPoints() const
+void Game::renderGameParameter() const
 {
-    wattron(this->mWindows[2] , COLOR_PAIR(4));
+    wattron(this->mWindows[2] , COLOR_PAIR(point_color));//render point
     std::string pointString = std::to_string(this->mPoints);
-    mvwprintw(this->mWindows[2], 12, 1, pointString.c_str());
+    mvwprintw(this->mWindows[2], 9, 10, pointString.c_str());
+    wattroff(this->mWindows[2] , COLOR_PAIR(point_color));
+
+    wattron(this->mWindows[2] , COLOR_PAIR(difficulty_color));//render difficulty
+    std::string difficultyString = std::to_string(this->mDifficulty);
+    mvwprintw(this->mWindows[2], 7, 14, difficultyString.c_str());
+    wattroff(this->mWindows[2] , COLOR_PAIR(difficulty_color));
+
+    wattron(this->mWindows[2] , COLOR_PAIR(life_color));//render life
+    std::string lifestring = std::to_string(this->mLife);
+    mvwprintw(this->mWindows[2], 5, 8, lifestring.c_str());
+    wattroff(this->mWindows[2] , COLOR_PAIR(life_color));
+
+    wattron(this->mWindows[2] , COLOR_PAIR(rednum));//render red food
+    std::string rednumstring = std::to_string(this->mRedFoodNum);
+    mvwprintw(this->mWindows[2], 11, 10, rednumstring.c_str());
+    wattroff(this->mWindows[2] , COLOR_PAIR(rednum));
+
     wrefresh(this->mWindows[2]);
-    wattroff(this->mWindows[2] , COLOR_PAIR(4));
 }
 
-void Game::renderDifficulty() const
-{
-    wattron(this->mWindows[2] , COLOR_PAIR(6));
-    std::string difficultyString = std::to_string(this->mDifficulty);
-    mvwprintw(this->mWindows[2], 9, 1, difficultyString.c_str());
-    wrefresh(this->mWindows[2]);
-    wattroff(this->mWindows[2] , COLOR_PAIR(6));
-}
+
+
 
 void Game::initializeGame()
 {
@@ -293,6 +307,8 @@ void Game::initializeGame()
     this->mPtrSnake->senseFood(this->mFood);
     this->mDifficulty = 0;
     this->mPoints = 0;
+    this->mLife = 1;
+    this->mRedFoodNum = 0;
     this->mDelay = this->mBaseDelay;
 }
 
@@ -321,10 +337,10 @@ void Game::createRamdonFood()
 
 void Game::renderFood() const
 {
-    wattron(this->mWindows[1] , COLOR_PAIR(1));
+    wattron(this->mWindows[1] , COLOR_PAIR(food_color));
     mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), this->mFoodSymbol);
     wrefresh(this->mWindows[1]);
-    wattroff(this->mWindows[1] , COLOR_PAIR(1));
+    wattroff(this->mWindows[1] , COLOR_PAIR(food_color));
 }
 
 void Game::renderSnake() const
@@ -334,13 +350,13 @@ void Game::renderSnake() const
 
                 //init_pair(1 , COLOR_CYAN , COLOR_CYAN);
                 //attron(COLOR_PAIR(1));
-    wattron(this->mWindows[1] , COLOR_PAIR(2));
+    wattron(this->mWindows[1] , COLOR_PAIR(snake_color));
     for (int i = 0; i < snakeLength; i ++)
     {
         mvwaddch(this->mWindows[1], snake[i].getY(), snake[i].getX(), this->mSnakeSymbol);
     }
     wrefresh(this->mWindows[1]);
-    wattroff(this->mWindows[1] , COLOR_PAIR(2));
+    wattroff(this->mWindows[1] , COLOR_PAIR(snake_color));
 }
 
 void Game::controlSnake(int& escfor) const
@@ -416,6 +432,28 @@ void Game::adjustDelay()
     }
 }
 
+void Game::adjustLife()
+{
+    if(this->mRedFoodNum == 5){
+            mLife++;
+            mRedFoodNum = 0;
+    }
+}
+
+void Game::lifeRestart()
+{
+    this->mPtrSnake = nullptr;
+    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
+    this->createRamdonFood();
+    this->mPtrSnake->senseFood(this->mFood);
+    this->mLife--;
+}
+
+bool Game::is_dead()
+{
+    return (mLife == 0)? true : false;
+}
+
 void Game::runGame(int& escfor)
 {
     bool moveSuccess;
@@ -431,33 +469,40 @@ void Game::runGame(int& escfor)
         this->controlSnake(escfor);
 
         //restart or quit when gaming
-        if(escfor == 0 || escfor ==1)break;
+        if(escfor == 0 || escfor ==1){ break;}
         //save when gaming
         else if(escfor == 3){escfor = -1 ; writeGameFile();}
 
 
         werase(this->mWindows[1]);
         box(this->mWindows[1], 0, 0);
-        wbkgd(this->mWindows[1] , COLOR_PAIR(3));//render game board background color
+        wbkgd(this->mWindows[1] , COLOR_PAIR(board_1_color));//render game board background color
+
+        this->renderFood();
 
         bool eatFood = this->mPtrSnake->moveFoward();
         bool collision = this->mPtrSnake->checkCollision();
-        if (collision == true)
-        {
-            break;
-        }
+
+        if(collision){this->lifeRestart();
+            //check dead or not
+            if (this->is_dead())break;
+        else continue;
+            }
+
+
         this->renderSnake();
-        if (eatFood == true)
+        if (eatFood)
         {
             eat_sound();//sound when eating
-            this->mPoints += 1;
+            this->mPoints ++;
             this->createRamdonFood();
             this->mPtrSnake->senseFood(this->mFood);
+            this->mRedFoodNum ++;
             this->adjustDelay();
+            this->adjustLife();
         }
-        this->renderFood();
-        this->renderDifficulty();
-        this->renderPoints();
+
+        this->renderGameParameter();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
 
@@ -473,16 +518,8 @@ void Game::startGame()
     //initialise the color pair
     initscr();
     start_color();
-    //init_color(COLOR_BLUE , 19 , 70 , 149);
-    init_pair(1 , COLOR_RED , COLOR_RED);//food
-    init_pair(2 , COLOR_GREEN , COLOR_BLACK);//snake
-    init_pair(3 , COLOR_WHITE , COLOR_BLUE); //board 1 background
-    init_pair(4 , COLOR_WHITE , COLOR_YELLOW); //points
-    init_pair(5 , COLOR_WHITE , COLOR_YELLOW);//board 0 background
-    init_pair(6 , COLOR_RED , COLOR_YELLOW);//difficulty
-    init_pair(7 , COLOR_BLUE , COLOR_YELLOW);//information
-    init_pair(8 , COLOR_WHITE , COLOR_RED);//board 2 background
 
+    init_game_color();
 
     refresh();
     bool choice;
@@ -587,6 +624,8 @@ bool Game::writeGameFile()
         outputFile << this->mDelay << std::endl;//write speed
         outputFile << this->mDifficulty << std::endl;//write difficulty
         outputFile << this->mPoints << std::endl; //write points
+        outputFile << this->mLife << std::endl; //write life
+        outputFile << this->mRedFoodNum << std::endl; //write red num
         outputFile << this->mFood.getX() << ' ' << this->mFood.getY() << std::endl; //write food position
         outputFile << this->mPtrSnake->get_direction() << std::endl;//write direction
 
@@ -620,6 +659,10 @@ bool Game::readGameFile()
         this->mDifficulty = temp;//read difficulty
         inputFile >> temp;
         this->mPoints = temp; //read points
+        inputFile >> temp;
+        this->mLife = temp; //read life
+        inputFile >> temp;
+        this->mRedFoodNum = temp; //read red num
 
         int food_x , food_y;
         inputFile >> food_x >> food_y ; //read food position
