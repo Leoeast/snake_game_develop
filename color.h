@@ -13,6 +13,8 @@
 #define board_2_color 8
 #define life_color 9
 #define rednum 10
+#define score_one_color 11
+#define block_color 12
 
 //init_color(COLOR_BLUE , 19 , 70 , 149);
 int init_game_color(){
@@ -27,6 +29,8 @@ int init_game_color(){
     init_pair(board_2_color , COLOR_WHITE , COLOR_RED);//board 2 background
     init_pair(life_color , COLOR_RED , COLOR_BLACK);//life
     init_pair(rednum , COLOR_YELLOW , COLOR_BLUE);//red food
+    init_pair(score_one_color , COLOR_GREEN , COLOR_WHITE);//red food
+    init_pair(block_color , COLOR_BLACK , COLOR_BLUE);//block
     return 0;
 }
 

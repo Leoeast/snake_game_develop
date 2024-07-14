@@ -12,6 +12,8 @@
 #include "game.h"
 #include "music.h"
 #include "color.h"
+#include "score_road.h"
+#include "block.h"
 
 Game::Game()
 {
@@ -137,7 +139,7 @@ int Game::renderEscMenu() const
 
     menu = newwin(height, width, startY, startX);
     box(menu, 0, 0);
-    std::vector<std::string> menuItems = {"Restart", "Quit" , "Continue" , "Save"};
+    std::vector<std::string> menuItems = {"Restart", "Quit" , "Continue" , "Save" , "Help"};
 
     int index = 0;
     int offset = 4;
@@ -150,6 +152,7 @@ int Game::renderEscMenu() const
     mvwprintw(menu, 1 + offset, 1, menuItems[1].c_str());
     mvwprintw(menu, 2 + offset, 1, menuItems[2].c_str());
     mvwprintw(menu, 3 + offset, 1, menuItems[3].c_str());
+    mvwprintw(menu, 4 + offset, 1, menuItems[4].c_str());
 
     wrefresh(menu);
 
@@ -272,6 +275,36 @@ bool Game::renderRestartMenu() const
 
 }
 
+void Game::renderHelp()
+{
+    WINDOW * menu;
+    int width = this->mGameBoardWidth * 0.5;
+    int height = this->mGameBoardHeight * 0.5;
+    int startX = this->mGameBoardWidth * 0.25;
+    int startY = this->mGameBoardHeight * 0.25 + this->mInformationHeight;
+
+    menu = newwin(height, width, startY, startX);
+    box(menu, 0, 0);
+
+    mvwprintw(menu, 1, 1, "Red food will add your length");
+    mvwprintw(menu, 2, 1, "Every 5 red food will add your life");
+    mvwprintw(menu, 3, 1, "If you do not walk score road completely once , the rest will become blocks");
+
+    wrefresh(menu);
+
+    int key;
+    while (true)
+    {
+        key = getch();
+
+        if(key == 27)break;
+
+        wrefresh(menu);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    delwin(menu);
+}
 void Game::renderGameParameter() const
 {
     wattron(this->mWindows[2] , COLOR_PAIR(point_color));//render point
@@ -298,13 +331,14 @@ void Game::renderGameParameter() const
 }
 
 
-
-
 void Game::initializeGame()
 {
     this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
+    this->mBlock = Block();
     this->createRamdonFood();
+    this->createRandomScore();
     this->mPtrSnake->senseFood(this->mFood);
+    this->mPtrSnake->senseSroad(this->mRoad);
     this->mDifficulty = 0;
     this->mPoints = 0;
     this->mLife = 1;
@@ -315,11 +349,11 @@ void Game::initializeGame()
 void Game::createRamdonFood()
 {
     std::vector<SnakeBody> availableGrids;
-    for (int i = 1; i < this->mGameBoardHeight - 1; i ++)
+    for (int i = 2; i < this->mGameBoardHeight - 2; i ++)
     {
         for (int j = 1; j < this->mGameBoardWidth - 1; j ++)
         {
-            if(this->mPtrSnake->isPartOfSnake(j, i))
+            if(this->mPtrSnake->isPartOfSnake(j, i) || this->mRoad.isPartOfScore(j , i) || this->mBlock.isPartOfBlock(j ,i))
             {
                 continue;
             }
@@ -341,6 +375,115 @@ void Game::renderFood() const
     mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), this->mFoodSymbol);
     wrefresh(this->mWindows[1]);
     wattroff(this->mWindows[1] , COLOR_PAIR(food_color));
+}
+
+void Game::createRandomScoreHead(int& x , int& y)
+{
+    do{
+        x = 1 + rand()%100;
+        y = 2 + rand()%20;
+
+    }
+    while((x == this->mFood.getX() && y == this->mFood.getY()) || this->mPtrSnake->isPartOfSnake(x, y) || this->mBlock.isPartOfBlock(x ,y ));
+}
+void Game::createRandomScore()
+{
+    int head_x , head_y;
+    createRandomScoreHead(head_x , head_y);
+    this->mRoad = ScoreRoad(head_x , head_y);
+    for(int i = 1 ; i < road_length ; i ++)
+    {
+        int a_ord = this->mRoad.get_road()[this->mRoad.get_road().size() - 1].get_ord();
+        int a_x = this->mRoad.get_road()[this->mRoad.get_road().size() - 1].get_x();
+        int a_y = this->mRoad.get_road()[this->mRoad.get_road().size() - 1].get_y();
+        int tep = std::rand() % 4;
+        switch(tep)
+        {
+        case 0 :
+            if(this->isEmpty(a_x  , a_y - 1))mRoad.get_road().push_back(ScoreOne(a_x , a_y - 1 , a_ord + 1 ));
+            break;
+        case 1 :
+            if(this->isEmpty(a_x  , a_y + 1))mRoad.get_road().push_back(ScoreOne(a_x , a_y + 1 , a_ord + 1 ));
+            break;
+        case 2 :
+            if(this->isEmpty(a_x - 1  , a_y ))mRoad.get_road().push_back(ScoreOne(a_x - 1 , a_y , a_ord + 1 ));
+            break;
+        default :
+            if(this->isEmpty(a_x + 1 , a_y))mRoad.get_road().push_back(ScoreOne(a_x + 1 , a_y , a_ord + 1 ));
+            break;
+
+        }
+    }
+    mcompleteRoad = mRoad;
+}
+
+bool Game::inBound(int x , int y)
+{
+    if(x > 1 && x < mGameBoardWidth - 2 && y > 1 && y < mGameBoardHeight - 2)return true;
+    return false;
+}
+
+bool Game::isEmpty(int x , int y)
+{
+    if(!inBound(x , y))return false;//check bound
+    if(x == mFood.getX() && y == mFood.getY())return false;//check food
+    if(this->mPtrSnake->isPartOfSnake(x, y))return false;//check snake
+    if(this->mRoad.isPartOfScore(x , y))return false;//check road
+    if(this->mBlock.isPartOfBlock(x , y))return false;//check block
+    return true;
+}
+
+void Game::renderScore()
+{
+    int scoreLength = this->mRoad.get_length();
+                //init_pair(1 , COLOR_CYAN , COLOR_CYAN);
+                //attron(COLOR_PAIR(1));
+    wattron(this->mWindows[1] , COLOR_PAIR(score_one_color));
+    for (int i = 0; i < scoreLength; i ++)
+    {
+        char sym = this->mRoad.get_road()[i].get_ord() + '0';
+        mvwaddch(this->mWindows[1], this->mRoad.get_road()[i].get_y(), this->mRoad.get_road()[i].get_x(), sym);
+    }
+    wrefresh(this->mWindows[1]);
+    wattroff(this->mWindows[1] , COLOR_PAIR(score_one_color));
+}
+
+bool Game::Road_is_complete()
+{
+    return (mcompleteRoad == mRoad);
+}
+
+void Game::createBlock(int x , int y)
+{
+    int temp = this->mRoad.get_length();
+    for(int i = 0 ; i < temp ; i ++)
+    {
+        if(x == this->mRoad.get_road()[i].get_x() && y == this->mRoad.get_road()[i].get_y())continue;
+        this->mBlock.get_block_vec().push_back(BlockOne(this->mRoad.get_road()[i].get_x() , this->mRoad.get_road()[i].get_y()));
+    }
+}
+
+void Game::createBlock()
+{
+    int temp = this->mRoad.get_length();
+    for(int i = 0 ; i < temp ; i ++)
+    {
+        this->mBlock.get_block_vec().push_back(BlockOne(this->mRoad.get_road()[i].get_x() , this->mRoad.get_road()[i].get_y()));
+    }
+}
+
+void Game::renderBlock()
+{
+    int blockLength = this->mBlock.get_length();
+                //init_pair(1 , COLOR_CYAN , COLOR_CYAN);
+                //attron(COLOR_PAIR(1));
+    wattron(this->mWindows[1] , COLOR_PAIR(block_color));
+    for (int i = 0; i < blockLength; i ++)
+    {
+        mvwaddch(this->mWindows[1], this->mBlock.get_block_vec()[i].get_y(), this->mBlock.get_block_vec()[i].get_x(), mBlockSymbol);
+    }
+    wrefresh(this->mWindows[1]);
+    wattroff(this->mWindows[1] , COLOR_PAIR(block_color));
 }
 
 void Game::renderSnake() const
@@ -425,10 +568,10 @@ void Game::renderBoards() const
 
 void Game::adjustDelay()
 {
-    this->mDifficulty = this->mPoints / 5;
+    this->mDifficulty = this->mPoints / 10;
     if (mPoints % 5 == 0)
     {
-        this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
+        this->mDelay = this->mBaseDelay * pow(0.85 , this->mDifficulty);
     }
 }
 
@@ -446,6 +589,9 @@ void Game::lifeRestart()
     this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
     this->createRamdonFood();
     this->mPtrSnake->senseFood(this->mFood);
+    this->createRandomScore();
+    this->mPtrSnake->senseSroad(this->mRoad);
+    this->mBlock = Block();
     this->mLife--;
 }
 
@@ -472,6 +618,7 @@ void Game::runGame(int& escfor)
         if(escfor == 0 || escfor ==1){ break;}
         //save when gaming
         else if(escfor == 3){escfor = -1 ; writeGameFile();}
+        else if(escfor == 4){escfor = -1 ; renderHelp();}
 
 
         werase(this->mWindows[1]);
@@ -479,9 +626,12 @@ void Game::runGame(int& escfor)
         wbkgd(this->mWindows[1] , COLOR_PAIR(board_1_color));//render game board background color
 
         this->renderFood();
+        this->renderScore();
+        this->renderBlock();
 
         bool eatFood = this->mPtrSnake->moveFoward();
-        bool collision = this->mPtrSnake->checkCollision();
+        bool collision = this->mPtrSnake->checkCollision(this->mBlock);
+        bool eatScore = this->mPtrSnake->touchRoad();
 
         if(collision){this->lifeRestart();
             //check dead or not
@@ -500,6 +650,32 @@ void Game::runGame(int& escfor)
             this->mRedFoodNum ++;
             this->adjustDelay();
             this->adjustLife();
+        }
+        //judge if hit score
+        if(eatScore)
+        {
+            score_sound();
+            this->mPoints ++;
+            this->adjustDelay();
+            if(!this->mRoad.is_head(mPtrSnake->getSnake()[0].getX() , mPtrSnake->getSnake()[0].getY())){
+                    this->createBlock(mPtrSnake->getSnake()[0].getX() , mPtrSnake->getSnake()[0].getY());
+                    this->createRandomScore();
+            }
+            else {
+                if(this->mRoad.get_length() == 1)
+                {
+                    this->createRandomScore();
+                    this->mPoints ++;
+                }
+                else{
+                    this->mRoad.get_road().erase(this->mRoad.get_road().begin());
+                }
+            }
+            this->mPtrSnake->senseSroad(mRoad);
+        }
+        //check road if complete
+        else{
+            if(!Road_is_complete()){createBlock();createRandomScore();this->mPtrSnake->senseSroad(mRoad);}
         }
 
         this->renderGameParameter();
@@ -627,6 +803,28 @@ bool Game::writeGameFile()
         outputFile << this->mLife << std::endl; //write life
         outputFile << this->mRedFoodNum << std::endl; //write red num
         outputFile << this->mFood.getX() << ' ' << this->mFood.getY() << std::endl; //write food position
+        outputFile << this->mRoad.get_length() << std::endl; //write mroad length
+        //write mroad one by one
+        for(int i = 0 ; i < this->mRoad.get_length() ; i ++)
+        {
+            outputFile << this->mRoad.get_road()[i].get_x() << ' ' << this->mRoad.get_road()[i].get_y()  << ' ' << this->mRoad.get_road()[i].get_ord() << std::endl;
+
+        }
+        outputFile << this->mcompleteRoad.get_length() << std::endl; //write mcomplete road  length
+        //write mcomplete road one by one
+        for(int i = 0 ; i < this->mcompleteRoad.get_length() ; i ++)
+        {
+            outputFile << this->mcompleteRoad.get_road()[i].get_x() << ' ' << this->mcompleteRoad.get_road()[i].get_y()  << std::endl;
+
+        }
+        outputFile << this->mBlock.get_length() << std::endl; //write block length
+        //write block one by one
+        for(int i = 0 ; i < this->mBlock.get_length() ; i ++)
+        {
+            outputFile << this->mBlock.get_block_vec()[i].get_x() << ' ' << this->mBlock.get_block_vec()[i].get_y()   << std::endl;
+
+        }
+
         outputFile << this->mPtrSnake->get_direction() << std::endl;//write direction
 
         //write snake position one by one
@@ -669,6 +867,35 @@ bool Game::readGameFile()
         SnakeBody food(food_x , food_y);
         this->mFood = food;//initialise the food
 
+        inputFile >> temp;//read mroad length
+        this->mRoad = ScoreRoad(); //initialize mroad
+        int score_one_x , score_one_y , score_one_ord;
+        for(int i = 0 ; i < temp ; i ++)
+        {
+            inputFile >> score_one_x >> score_one_y >> score_one_ord;
+            this->mRoad.get_road().push_back(ScoreOne(score_one_x , score_one_y , score_one_ord));
+
+        }
+
+        inputFile >> temp;//read mcompleteRoad length
+        this->mcompleteRoad = ScoreRoad(); //initialize mcomplete road
+        for(int i = 0 ; i < temp ; i ++)
+        {
+            inputFile >> score_one_x >> score_one_y;
+            this->mcompleteRoad.get_road().push_back(ScoreOne(score_one_x , score_one_y , i));
+
+        }
+
+        inputFile >> temp;//read block length
+        this->mBlock = Block(); //initialize mblock
+        int block_one_x , block_one_y ;
+        for(int i = 0 ; i < temp ; i ++)
+        {
+            inputFile >> block_one_x >> block_one_y;
+            this->mBlock.get_block_vec().push_back(BlockOne(block_one_x , block_one_y));
+
+        }
+
         inputFile >> temp;
 
         //read snake position one by one
@@ -677,6 +904,8 @@ bool Game::readGameFile()
         this->mPtrSnake->senseFood(mFood);
         //set direction
         this->mPtrSnake->set_direction(temp);
+        //sense mscore
+        this->mPtrSnake->senseSroad(this->mRoad);
 
         }
 

@@ -9,6 +9,8 @@
 
 #include "snake.h"
 #include "music.h"
+#include "score_road.h"
+#include "block.h"
 
 
 class Game
@@ -41,14 +43,27 @@ public:
 
     void renderGameParameter() const;
 
-
+        //food
 		void createRamdonFood();
     void renderFood() const;
+    //score
+    void createRandomScoreHead(int& x , int& y);
+    void createRandomScore();
+    void renderScore();
+    bool isEmpty(int x , int y);
+    bool inBound(int x , int y);
+    bool Road_is_complete();
+    //block
+    void createBlock(int x , int y);
+    void createBlock();
+    void renderBlock();
+
     void renderSnake() const;
     void controlSnake(int& escfor) const;
 
 		void startGame();
     bool renderRestartMenu() const;
+    void renderHelp();
     int renderEscMenu() const;
     void adjustDelay();
     void adjustLife();
@@ -78,6 +93,15 @@ private:
     // Food information
     SnakeBody mFood;
     const char mFoodSymbol = '#';
+    //ScoreRoad
+    ScoreRoad mRoad;
+    ScoreRoad mcompleteRoad;
+    const int road_length = 4;
+    //block
+    Block mBlock;
+    const char mBlockSymbol = 'X';
+
+
     //游戏参数
     int mPoints = 0;
     int mDifficulty = 0;

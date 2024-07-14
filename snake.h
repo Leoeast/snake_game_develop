@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <fstream>
+#include "score_road.h"
+#include "block.h"
 
 enum class Direction
 {
@@ -45,7 +47,10 @@ public:
     bool hitWall();
     bool touchFood();
     bool hitSelf();
-    bool checkCollision();
+    bool checkCollision(Block& mblock);
+    //check if hit block
+    bool hitBlock(Block& mblock);
+
     bool changeDirection(Direction newDirection);
     std::vector<SnakeBody>& getSnake();
     int getLength();
@@ -54,6 +59,9 @@ public:
     //read and write
     int get_direction();
     void set_direction(int& new_direc);
+    //score road
+    void senseSroad(ScoreRoad& srd);
+    bool touchRoad();
 
 private:
     const int mGameBoardWidth;
@@ -63,6 +71,7 @@ private:
     Direction mDirection;
     SnakeBody mFood;
     std::vector<SnakeBody> mSnake;
+    ScoreRoad sroad;
 };
 
 #endif

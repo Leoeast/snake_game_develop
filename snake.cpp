@@ -298,9 +298,9 @@ bool Snake::moveFoward()
     }
 }
 
-bool Snake::checkCollision()
+bool Snake::checkCollision(Block& mblock)
 {
-    if (this->hitWall() || this->hitSelf())
+    if (this->hitWall() || this->hitSelf() || this->hitBlock(mblock))
     {
         return true;
     }
@@ -315,4 +315,27 @@ int Snake::getLength()
 {
     return this->mSnake.size();
 }
+
+void Snake::senseSroad(ScoreRoad& srd)
+{
+    sroad = srd;
+}
+
+
+bool Snake::touchRoad()
+{
+    return (sroad.isPartOfScore(this->mSnake[0].getX() , this->mSnake[0].getY()));
+}
+
+
+bool Snake::hitBlock(Block& mblock)
+{
+    int head_x = mSnake[0].getX();
+    int head_y = mSnake[0].getY();
+
+    if(mblock.isPartOfBlock(head_x , head_y))return true;
+
+    return false;
+}
+
 
