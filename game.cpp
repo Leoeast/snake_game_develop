@@ -286,9 +286,9 @@ void Game::renderHelp()
     menu = newwin(height, width, startY, startX);
     box(menu, 0, 0);
 
-    mvwprintw(menu, 1, 1, "Red food will add your length");
-    mvwprintw(menu, 2, 1, "Every 5 red food will add your life");
-    mvwprintw(menu, 3, 1, "If you do not walk score road completely once , the rest will become blocks");
+    mvwprintw(menu, 1, 1, "hahaha");
+    mvwprintw(menu, 2, 1, "lalala");
+    mvwprintw(menu, 3, 1, "xixixi");
 
     wrefresh(menu);
 
