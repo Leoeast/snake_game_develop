@@ -16,3 +16,4 @@ clean:
 	del *.o 
 	del snakegame.exe
 	del record.dat
+	del 	gamefile.txt

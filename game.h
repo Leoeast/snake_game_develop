@@ -46,6 +46,14 @@ public:
         //food
 		void createRamdonFood();
     void renderFood() const;
+
+    //prop
+    void eatPropResult();
+    void renderProp() const;//render prop
+    void createRandomProp();//create random prop
+    bool isPartOfProp(int x , int y);
+    void adjustProp();
+
     //score
     void createRandomScoreHead(int& x , int& y);
     void createRandomScore();
@@ -56,11 +64,14 @@ public:
     //block
     void createBlock(int x , int y);
     void createBlock();
+    void createRandomBlock(int n);
     void renderBlock();
 
+    //snake
     void renderSnake() const;
     void controlSnake(int& escfor) const;
 
+    //game
 		void startGame();
     bool renderRestartMenu() const;
     void renderHelp();
@@ -69,6 +80,7 @@ public:
     void adjustLife();
     bool is_dead();
 
+    //file
     bool writeGameFile();
     bool readGameFile();
     bool GameFile_is_empty();
@@ -92,6 +104,7 @@ private:
     std::unique_ptr<Snake> mPtrSnake;
     // Food information
     SnakeBody mFood;
+    int food_num;
     const char mFoodSymbol = '#';
     //ScoreRoad
     ScoreRoad mRoad;
@@ -100,6 +113,15 @@ private:
     //block
     Block mBlock;
     const char mBlockSymbol = 'X';
+    const int startBlockNum = 10;
+    //Prop information
+    SnakeBody mProp;
+    int PropNum = 0;
+    const char mPropSymbol1 = '$';
+    const char mPropSymbol2 = '*';
+    const char mPropSymbol3 = '%';
+    const char mPropSymbol4 = '>';
+    const char mPropSymbol5 = '<';
 
 
     //游戏参数

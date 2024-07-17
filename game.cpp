@@ -62,9 +62,9 @@ void Game::renderInformationBoard() const
     wbkgd(mWindows[0] , COLOR_PAIR(board_0_color));//render information board color
     wattron(this->mWindows[0] , COLOR_PAIR(information_color));
     mvwprintw(this->mWindows[0], 1, 1, "Welcome to The Snake Game!");
-    mvwprintw(this->mWindows[0], 2, 1, "This is by Leo.");
-    mvwprintw(this->mWindows[0], 3, 1, "Github : Leoeast!");
-    mvwprintw(this->mWindows[0], 4, 1, "Implemented using C++ and libncurses library.");
+    mvwprintw(this->mWindows[0], 2, 1, "This is by Si Nei Ke.");
+    mvwprintw(this->mWindows[0], 3, 1, "Implemented using C++ and libncurses library.");
+    mvwprintw(this->mWindows[0], 4, 1, "Wish you happy!");
     wrefresh(this->mWindows[0]);
     wattroff(this->mWindows[0] , COLOR_PAIR(information_color));
 }
@@ -288,8 +288,10 @@ void Game::renderHelp()
 
     mvwprintw(menu, 1, 1, "Red food will add your length");
     mvwprintw(menu, 2, 1, "Every 5 red food will add your life");
-    mvwprintw(menu, 3, 1, "If you do not walk score road completely once , the rest will become blocks");
-
+    mvwprintw(menu, 3, 1, "If you do not walk score road completely once");
+    mvwprintw(menu, 4, 1, " the rest will become blocks");
+    mvwprintw(menu, 5, 1, "Every 5 points will cause 2 blocks");
+    mvwprintw(menu, 6, 1, "Special food mean special buff");
     wrefresh(menu);
 
     int key;
@@ -335,14 +337,24 @@ void Game::initializeGame()
 {
     this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
     this->mBlock = Block();
+
+    this->createRandomBlock(this->startBlockNum);
+
     this->createRamdonFood();
+
     this->createRandomScore();
+
     this->mPtrSnake->senseFood(this->mFood);
     this->mPtrSnake->senseSroad(this->mRoad);
     this->mDifficulty = 0;
     this->mPoints = 0;
     this->mLife = 1;
     this->mRedFoodNum = 0;
+
+    this->PropNum = 0;
+    this->mProp = SnakeBody();
+    this->mPtrSnake->senseProp(this->mProp);
+
     this->mDelay = this->mBaseDelay;
 }
 
@@ -353,7 +365,7 @@ void Game::createRamdonFood()
     {
         for (int j = 1; j < this->mGameBoardWidth - 1; j ++)
         {
-            if(this->mPtrSnake->isPartOfSnake(j, i) || this->mRoad.isPartOfScore(j , i) || this->mBlock.isPartOfBlock(j ,i))
+            if(!this->isEmpty(j , i))
             {
                 continue;
             }
@@ -367,14 +379,39 @@ void Game::createRamdonFood()
     // Randomly select a grid that is not occupied by the snake
     int random_idx = std::rand() % availableGrids.size();
     this->mFood = availableGrids[random_idx];
+    int temp=rand() % 10+1;
+    this->food_num = temp;
 }
 
 void Game::renderFood() const
 {
-    wattron(this->mWindows[1] , COLOR_PAIR(food_color));
-    mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), this->mFoodSymbol);
-    wrefresh(this->mWindows[1]);
-    wattroff(this->mWindows[1] , COLOR_PAIR(food_color));
+    switch(this->food_num)
+    {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+        {
+        wattron(this->mWindows[1] , COLOR_PAIR(food_color));
+        mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), this->mFoodSymbol);
+        wrefresh(this->mWindows[1]);
+        wattroff(this->mWindows[1] , COLOR_PAIR(food_color));
+        break;
+        }
+    case 8:
+    case 9:
+    case 10:
+        {
+        wattron(this->mWindows[1] , COLOR_PAIR(redfood_color));
+        mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), this->mFoodSymbol);
+        wrefresh(this->mWindows[1]);
+        wattroff(this->mWindows[1] , COLOR_PAIR(redfood_color));
+        break;
+        }
+    }
 }
 
 void Game::createRandomScoreHead(int& x , int& y)
@@ -384,8 +421,10 @@ void Game::createRandomScoreHead(int& x , int& y)
         y = 2 + rand()%20;
 
     }
-    while((x == this->mFood.getX() && y == this->mFood.getY()) || this->mPtrSnake->isPartOfSnake(x, y) || this->mBlock.isPartOfBlock(x ,y ));
+    while(!this->isEmpty(x , y));
 }
+
+
 void Game::createRandomScore()
 {
     int head_x , head_y;
@@ -430,6 +469,7 @@ bool Game::isEmpty(int x , int y)
     if(this->mPtrSnake->isPartOfSnake(x, y))return false;//check snake
     if(this->mRoad.isPartOfScore(x , y))return false;//check road
     if(this->mBlock.isPartOfBlock(x , y))return false;//check block
+    if(this->isPartOfProp(x , y))return false;//check prop
     return true;
 }
 
@@ -472,6 +512,20 @@ void Game::createBlock()
     }
 }
 
+void Game::createRandomBlock(int n)
+{
+    for (int i = 0; i < n; i++) {
+        int blockX, blockY;
+        do {
+            blockX = 1 + rand() % (this->mGameBoardWidth - 2);
+            blockY = 1 + rand() % (this->mGameBoardHeight - 2);
+
+        } while (!this->isEmpty(blockX , blockY));
+
+        this->mBlock.get_block_vec().push_back(BlockOne(blockX, blockY));
+    }
+}
+
 void Game::renderBlock()
 {
     int blockLength = this->mBlock.get_length();
@@ -485,6 +539,123 @@ void Game::renderBlock()
     wrefresh(this->mWindows[1]);
     wattroff(this->mWindows[1] , COLOR_PAIR(block_color));
 }
+
+void Game::createRandomProp()//create random prop
+{
+    int prop_x;
+    int prop_y;
+    do {
+        prop_x = 1 + rand() % (this->mGameBoardWidth - 2);
+        prop_y = 1 + rand() % (this->mGameBoardHeight - 2);
+
+    } while (!this->isEmpty(prop_x , prop_y));
+
+    int temp=rand() % 10+1;
+    this->PropNum = temp;
+
+    this->mProp = SnakeBody(prop_x , prop_y);
+}
+
+bool Game::isPartOfProp(int x , int y)
+{
+    if(x == this->mProp.getX() && y == this->mProp.getY())return true;
+    return false;
+}
+
+void Game::eatPropResult()
+{
+    switch(this->PropNum)
+{
+    case 1:
+    case 2:
+    {
+        this->mLife++;
+        this->PropNum = 0;
+        this->mProp = SnakeBody();
+        this->mPtrSnake->senseProp(this->mProp);
+        break;
+    }
+    case 3:
+    case 4:
+    {
+        this->mBlock = Block();
+        this->PropNum = 0;
+        this->mProp = SnakeBody();
+        this->mPtrSnake->senseProp(this->mProp);
+        break;
+    }
+    case 5:
+    case 6:
+    {
+        this->mPoints+=5;
+        this->createRandomBlock(5);
+        this->adjustProp();
+        if(this->mPoints % 5 != 0){
+            this->PropNum = 0;
+        this->mProp = SnakeBody();
+        this->mPtrSnake->senseProp(this->mProp);
+        }
+        break;
+    }
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    {
+        this->mPoints+=2;
+        this->adjustProp();
+        if(this->mPoints % 5 != 0){
+            this->PropNum = 0;
+        this->mProp = SnakeBody();
+        this->mPtrSnake->senseProp(this->mProp);
+        }
+        break;
+    }
+}
+}
+
+void Game::renderProp() const
+{
+    wattron(this->mWindows[1] , COLOR_PAIR(prop_color));
+    switch(this->PropNum){
+    case 1:
+    case 2:
+    {
+    mvwaddch(this->mWindows[1], this->mProp.getY(), this->mProp.getX(), this->mPropSymbol1);
+    break;
+    }
+    case 3:
+    case 4:
+    {
+    mvwaddch(this->mWindows[1], this->mProp.getY(), this->mProp.getX(), this->mPropSymbol2);
+    break;
+    }
+    case 5:
+    case 6:
+    {
+    mvwaddch(this->mWindows[1], this->mProp.getY(), this->mProp.getX(), this->mPropSymbol3);
+    break;
+    }
+    case 7:
+    case 8:
+    {
+    mvwaddch(this->mWindows[1], this->mProp.getY(), this->mProp.getX(), this->mPropSymbol4);
+    break;
+    }
+    case 9:
+    case 10:
+    {
+    mvwaddch(this->mWindows[1], this->mProp.getY(), this->mProp.getX(), this->mPropSymbol5);
+    break;
+    }
+    case 0:
+    {
+    break;
+    }}
+    wrefresh(this->mWindows[1]);
+    wattroff(this->mWindows[1] , COLOR_PAIR(prop_color));
+}
+
 
 void Game::renderSnake() const
 {
@@ -590,14 +761,30 @@ void Game::lifeRestart()
     this->createRamdonFood();
     this->mPtrSnake->senseFood(this->mFood);
     this->createRandomScore();
-    this->mPtrSnake->senseSroad(this->mRoad);
+
+    // reset block
     this->mBlock = Block();
+    this->createRandomBlock(startBlockNum);
+
+
+    this->mPtrSnake->senseSroad(this->mRoad);
+
+    if(this->PropNum != 0){
+        this->createRandomProp();
+        this->mPtrSnake->senseProp(this->mProp);
+    }
+    //this->mBlock = Block();
     this->mLife--;
 }
 
 bool Game::is_dead()
 {
     return (mLife == 0)? true : false;
+}
+
+void Game::adjustProp()
+{
+    if(this->mPoints % 5 == 0){this->createRandomProp();this->mPtrSnake->senseProp(this->mProp);this->createRandomBlock(2);}
 }
 
 void Game::runGame(int& escfor)
@@ -623,15 +810,17 @@ void Game::runGame(int& escfor)
 
         werase(this->mWindows[1]);
         box(this->mWindows[1], 0, 0);
-        wbkgd(this->mWindows[1] , COLOR_PAIR(board_1_color));//render game board background color
+        //wbkgd(this->mWindows[1] , COLOR_PAIR(board_1_color));//render game board background color
 
         this->renderFood();
         this->renderScore();
         this->renderBlock();
+        this->renderProp();
 
         bool eatFood = this->mPtrSnake->moveFoward();
         bool collision = this->mPtrSnake->checkCollision(this->mBlock);
         bool eatScore = this->mPtrSnake->touchRoad();
+        bool eatProp = this->mPtrSnake->touchProp();
 
         if(collision){this->lifeRestart();
             //check dead or not
@@ -650,6 +839,7 @@ void Game::runGame(int& escfor)
             this->mRedFoodNum ++;
             this->adjustDelay();
             this->adjustLife();
+            this->adjustProp();
         }
         //judge if hit score
         if(eatScore)
@@ -657,6 +847,7 @@ void Game::runGame(int& escfor)
             score_sound();
             this->mPoints ++;
             this->adjustDelay();
+            this->adjustProp();
             if(!this->mRoad.is_head(mPtrSnake->getSnake()[0].getX() , mPtrSnake->getSnake()[0].getY())){
                     this->createBlock(mPtrSnake->getSnake()[0].getX() , mPtrSnake->getSnake()[0].getY());
                     this->createRandomScore();
@@ -666,6 +857,8 @@ void Game::runGame(int& escfor)
                 {
                     this->createRandomScore();
                     this->mPoints ++;
+                    this->adjustDelay();
+                    this->adjustProp();
                 }
                 else{
                     this->mRoad.get_road().erase(this->mRoad.get_road().begin());
@@ -677,6 +870,11 @@ void Game::runGame(int& escfor)
         else{
             if(!Road_is_complete()){createBlock();createRandomScore();this->mPtrSnake->senseSroad(mRoad);}
         }
+
+        if(eatProp){
+            eat_sound();
+            this->eatPropResult();
+            }
 
         this->renderGameParameter();
 
@@ -802,7 +1000,12 @@ bool Game::writeGameFile()
         outputFile << this->mPoints << std::endl; //write points
         outputFile << this->mLife << std::endl; //write life
         outputFile << this->mRedFoodNum << std::endl; //write red num
+        outputFile << this->food_num << std::endl; //write food_num
         outputFile << this->mFood.getX() << ' ' << this->mFood.getY() << std::endl; //write food position
+
+        outputFile << this->PropNum << std::endl; //write prop_num
+        if(this->PropNum!=0)outputFile << this->mProp.getX() << ' ' << this->mProp.getY() << std::endl; //write prop position
+
         outputFile << this->mRoad.get_length() << std::endl; //write mroad length
         //write mroad one by one
         for(int i = 0 ; i < this->mRoad.get_length() ; i ++)
@@ -863,9 +1066,18 @@ bool Game::readGameFile()
         this->mRedFoodNum = temp; //read red num
 
         int food_x , food_y;
+        inputFile >> temp;//read food_num
+        this->food_num = temp;
         inputFile >> food_x >> food_y ; //read food position
         SnakeBody food(food_x , food_y);
         this->mFood = food;//initialise the food
+
+        inputFile >> temp;//read prop_num
+        this->PropNum = temp;
+        if(this->PropNum != 0){
+            inputFile >> food_x >> food_y ; //read prop position
+            this->mProp = SnakeBody(food_x , food_y);
+        }
 
         inputFile >> temp;//read mroad length
         this->mRoad = ScoreRoad(); //initialize mroad
@@ -902,6 +1114,8 @@ bool Game::readGameFile()
         this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength , inputFile));
         //sense food
         this->mPtrSnake->senseFood(mFood);
+        //sense prop
+        this->mPtrSnake->senseProp(mProp);
         //set direction
         this->mPtrSnake->set_direction(temp);
         //sense mscore

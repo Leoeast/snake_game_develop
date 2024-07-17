@@ -8,6 +8,8 @@
 
 SnakeBody::SnakeBody()
 {
+    mX = -1;
+    mY = -1;
 }
 
 
@@ -172,6 +174,23 @@ bool Snake::touchFood()
 void Snake::senseFood(SnakeBody food)
 {
     this->mFood = food;
+}
+
+bool Snake::touchProp()
+{
+    if (this->mProp == this->mSnake[0])
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void Snake::senseProp(SnakeBody prop)
+{
+    this->mProp = prop;
 }
 
 std::vector<SnakeBody>& Snake::getSnake()
